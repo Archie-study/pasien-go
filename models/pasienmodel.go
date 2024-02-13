@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/Archie-study/go-crud/config"
 	"github.com/Archie-study/go-crud/entities"
@@ -51,6 +52,9 @@ func (p *PasienModel) FindAll() ([]entities.Pasien, error) {
 			pasien.JenisKelamin = "Perempuan"
 		}
 
+		tgl_lahir, _ := time.Parse("2006-01-02", pasien.TanggalLahir)
+		pasien.TanggalLahir = tgl_lahir.Format("02-01-2006")
+
 		dataPasien = append(dataPasien, pasien)
 	}
 
@@ -70,4 +74,35 @@ func (p *PasienModel) Create(pasien entities.Pasien) bool {
 	lastInsertId, _ := result.LastInsertId()
 
 	return lastInsertId > 0
+}
+
+func (p *PasienModel) Find(id int64, pasien *entities.Pasien) error {
+
+	return p.conn.QueryRow("select * from pasien where id = ?", id).Scan(
+		&pasien.Id,
+		&pasien.NamaLengkap,
+		&pasien.NIK,
+		&pasien.JenisKelamin,
+		&pasien.TempatLahir,
+		&pasien.TanggalLahir,
+		&pasien.Alamat,
+		&pasien.NoHp,
+	)
+}
+
+func (p *PasienModel) Update(pasien entities.Pasien) error {
+
+	_, err := p.conn.Exec(
+		"update pasien set nama_lengkap = ?, nik = ?, jenis_kelamin = ?, tempat_lahir = ?, tanggal_lahir = ?, alamat = ?, no_hp = ? where id = ?",
+		pasien.NamaLengkap, pasien.NIK, pasien.JenisKelamin, pasien.TempatLahir, pasien.TanggalLahir, pasien.Alamat, pasien.NoHp, pasien.Id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *PasienModel) Delete(id int64) {
+	p.conn.Exec("delete from pasien where id = ?", id)
 }
